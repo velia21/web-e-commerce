@@ -1,8 +1,7 @@
-
 import { useState, type FormEvent } from "react";
 import { UserRound, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { useAppContext } from "../context/AppContext";
-import { errorMessage } from "../lib/api";
+import { errorMessage } from "../data/lib/api";
 
 const Auth = ({ isRegister }: { isRegister: boolean }) => {
   const { login, register, go, authError, setAuthError } = useAppContext();
@@ -43,15 +42,12 @@ const Auth = ({ isRegister }: { isRegister: boolean }) => {
           password_confirmation: password,
         });
 
-        // Jika register berhasil, arahkan ke halaman login
         setAuthError("");
         go("login");
 
       } else {
         // PROSES LOGIN
         await login(get("account"), password);
-
-        // Jika login berhasil, masuk ke dashboard
         go("home");
       }
 

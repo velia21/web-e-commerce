@@ -2,9 +2,8 @@ import { useState, useRef, type ChangeEvent, type FormEvent } from "react";
 import { CheckCircle, ShoppingCart } from "lucide-react";
 import { useAppContext } from "../context/AppContext";
 import { rupiah } from "../data/products";
-import { errorMessage } from "../lib/api";
+import { errorMessage } from "../data/lib/api";
 
-// Sama dengan validasi backend: image jpg/jpeg/png/webp, maks 4 MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_SIZE = 4 * 1024 * 1024;
 

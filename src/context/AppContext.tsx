@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { type Page, type Product, type CartItem, type Order, type User } from "../types";
-import { api, errorMessage, getToken, setToken, setUnauthorizedHandler } from "../lib/api";
+import { api, errorMessage, getToken, setToken, setUnauthorizedHandler } from "../data/lib/api";
 import {
   mapCart,
   mapOrder,
@@ -10,7 +10,7 @@ import {
   type ApiPelanggan,
   type ApiPesanan,
   type ApiProduk,
-} from "../lib/mappers";
+} from "../data/lib/mappers";
 
 type Paginated<T> = { data: T[]; current_page: number; last_page: number };
 
@@ -86,7 +86,7 @@ async function fetchAll<T>(path: string, maxPages = 20): Promise<T[]> {
     page += 1;
   } while (page <= last && page <= maxPages);
   return rows;
-} //testing
+}
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   // 1. Inisialisasi halaman berdasarkan URL path saat pertama kali dibuka/di-refresh
@@ -131,14 +131,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setPage(next);
     setAuthError("");
 
-    // Sinkronkan URL browser (misal: "home" jadi "/", selain itu jadi "/nama-halaman")
     const newPath = next === "home" ? "/" : `/${next}`;
     window.history.pushState({ page: next }, "", newPath);
 
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [loggedIn]);
 
-  // 2. Menangani tombol Back / Forward di browser
   useEffect(() => {
     const handlePopState = () => {
       const path = window.location.pathname.replace("/", "").toLowerCase();
@@ -160,7 +158,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       const rows = await fetchAll<ApiProduk>("/produk?per_page=100");
       const list = rows.map(mapProduct);
       setProducts(list);
-      // Perbarui stok produk yang sedang dibuka, atau pilih produk pertama
       setSelected((prev) => (prev ? list.find((p) => p.id === prev.id) ?? prev : list[0] ?? null));
       setLoadError("");
     } catch (e) {
@@ -231,7 +228,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setOrders([]);
   }, []);
 
-  // Token ditolak server (kedaluwarsa/dicabut) -> kembali ke halaman login
   useEffect(() => {
     setUnauthorizedHandler(() => {
       clearSession();
@@ -242,7 +238,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     return () => setUnauthorizedHandler(null);
   }, [clearSession]);
 
-  // Pulihkan sesi saat halaman dibuka ulang (token tersimpan di localStorage)
   useEffect(() => {
     let active = true;
 
@@ -295,7 +290,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     try {
       await api("/logout", { method: "POST", silent401: true });
     } catch {
-      /* token sudah tidak berlaku, tetap lanjut logout lokal */
+      /* token kedaluwarsa */
     }
     clearSession();
     go("home");
@@ -358,7 +353,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const totalItems = selectedCartItems.reduce((sum, i) => sum + i.quantity, 0);
   const totalPrice = selectedCartItems.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
 
-/* ---------------- Aksi pesanan ---------------- */
+  /* ---------------- Aksi pesanan ---------------- */
 
   const placeOrder = async (shipping: ShippingForm, proof: File | null) => {
     const checkoutItems = selectedCartItems;
@@ -374,10 +369,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       },
     });
 
-    // Ambil ID pesanan dengan aman dari berbagai kemungkinan format respons backend
     const orderId = res?.pesanan_id ?? res?.id ?? res?.data?.pesanan_id ?? res?.data?.id;
 
-    // Pesanan sudah dibuat. Kegagalan upload bukti tidak boleh membatalkannya.
     let proofError = "";
     if (proof && orderId) {
       try {
@@ -391,7 +384,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       proofError = "ID pesanan tidak ditemukan.";
     }
 
-    // Kosongkan barang yang sudah di-checkout dari keranjang server
     await Promise.allSettled(
       checkoutItems.map((i) => api(`/keranjang/item/${i.id}`, { method: "DELETE" }))
     );

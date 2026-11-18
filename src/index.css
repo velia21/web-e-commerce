@@ -4,6 +4,9 @@
   font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
+
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   
   /* Paksa light mode karena tema web kamu terang */
   color-scheme: light; 
@@ -36,4 +39,8 @@ body {
 /* Reset heading bawaan agar mengikuti App.css */
 h1, h2, h3, p {
   margin: 0;
+}
+
+img {
+  max-width: 100%;
 }

@@ -26,13 +26,12 @@ const MAX_SIZE = 4 * 1024 * 1024;
 const Orders = () => {
   const { orders, ordersLoading, ordersError, refreshOrders, uploadProof, cancelOrder, go } = useAppContext();
   const [orderFilter, setOrderFilter] = useState<OrderFilter>("Semua");
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null); // State untuk Modal Detail
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [message, setMessage] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const uploadTarget = useRef<number | null>(null);
 
-  // Ambil data terbaru setiap halaman dibuka
   useEffect(() => {
     void refreshOrders();
   }, [refreshOrders]);
@@ -59,7 +58,6 @@ const Orders = () => {
     try {
       await uploadProof(orderId, file);
       setMessage("Bukti pembayaran berhasil diunggah. Menunggu verifikasi admin.");
-      // refresh orders from server
       await refreshOrders();
     } catch (err) {
       setMessage(errorMessage(err));
@@ -75,7 +73,7 @@ const Orders = () => {
     try {
       await cancelOrder(orderId);
       setMessage("Pesanan berhasil dibatalkan.");
-      setSelectedOrder(null); // Tutup modal setelah batal
+      setSelectedOrder(null);
     } catch (err) {
       setMessage(errorMessage(err));
     } finally {
@@ -86,16 +84,15 @@ const Orders = () => {
   return (
     <main className="page">
       <div className="orders-card">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-          <h2 style={{ margin: 0 }}>Pesanan Saya</h2>
-          
+        <div className="orders-head">
+          <h2>Pesanan Saya</h2>
+
           <button
-            className="primary-button"
-            style={{ height: "36px", padding: "0 16px", fontSize: "13px", display: "inline-flex", alignItems: "center", gap: "6px" }}
+            className="primary-button orders-refresh"
             onClick={() => void refreshOrders()}
             disabled={ordersLoading}
           >
-            <RefreshCw size={14} style={{ animation: ordersLoading ? "spin 1s linear infinite" : "none" }} />
+            <RefreshCw size={14} className={ordersLoading ? "spin" : undefined} />
             {ordersLoading ? "Memperbarui..." : "Muat Ulang"}
           </button>
         </div>
@@ -160,87 +157,94 @@ const Orders = () => {
               <div className="modal-card" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header">
                   <h3>Detail Pesanan #{selectedOrder.id}</h3>
-                  <button className="modal-close-button" onClick={() => setSelectedOrder(null)}>
+                  <button className="modal-close-button" onClick={() => setSelectedOrder(null)} aria-label="Tutup detail pesanan">
                     <X size={20} />
                   </button>
                 </div>
 
                 <div className="modal-body">
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ color: "var(--muted)" }}>Tanggal Pesanan</span>
+                  <div className="modal-meta-row">
+                    <span>Tanggal Pesanan</span>
                     <b>{selectedOrder.date}</b>
                   </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ color: "var(--muted)" }}>Status Pesanan</span>
+                  <div className="modal-meta-row">
+                    <span>Status Pesanan</span>
                     <span className={`status ${statusClass[selectedOrder.status]}`}>{selectedOrder.status}</span>
                   </div>
 
-                  <hr style={{ border: "0", borderTop: "1px solid #ece3d7", margin: "4px 0" }} />
+                  <hr className="modal-divider" />
 
                   <div className="modal-section-title">Daftar Produk</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  <div className="modal-product-list">
                     {selectedOrder.items.map((item, i) => (
-                      <div key={`${item.product.id}-${i}`} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#faf6f0", padding: "10px 12px", borderRadius: "8px", border: "1px solid #ece3d7" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                          <img src={item.product.image} alt="" style={{ width: "40px", height: "40px", objectFit: "contain", background: "#fff", borderRadius: "6px", padding: "2px" }} />
-                          <div>
-                            <b style={{ display: "block", color: "var(--text)" }}>{item.product.name}</b>
-                            <small style={{ color: "var(--muted)" }}>{item.quantity}x @ {rupiah(item.price)}</small>
+                      <div key={`${item.product.id}-${i}`} className="modal-product">
+                        <div className="modal-product-main">
+                          <img className="modal-product-image" src={item.product.image} alt="" />
+                          <div className="modal-product-info">
+                            <b>{item.product.name}</b>
+                            <small>{item.quantity}x @ {rupiah(item.price)}</small>
                           </div>
                         </div>
-                        <b style={{ color: "var(--brown)" }}>{rupiah(item.price * item.quantity)}</b>
+                        <b className="modal-product-price">{rupiah(item.price * item.quantity)}</b>
                       </div>
                     ))}
                   </div>
 
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "4px", padding: "10px 4px", fontSize: "15px" }}>
+                  <div className="modal-total">
                     <b>Total Pembayaran</b>
-                    <strong style={{ color: "var(--brown)", fontSize: "18px" }}>{rupiah(selectedOrder.total)}</strong>
+                    <strong>{rupiah(selectedOrder.total)}</strong>
                   </div>
 
-                  <hr style={{ border: "0", borderTop: "1px solid #ece3d7", margin: "4px 0" }} />
+                  <hr className="modal-divider" />
 
                   <div className="modal-section-title">Informasi Pengiriman</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "6px", background: "#faf6f0", padding: "12px", borderRadius: "8px", border: "1px solid #ece3d7" }}>
-                    <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  <div className="modal-info-box">
+                    <div className="modal-info-row">
                       <User size={15} color="var(--brown)" />
                       <span>{selectedOrder.recipient} ({selectedOrder.phone})</span>
                     </div>
-                    <div style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
-                      <MapPin size={15} color="var(--brown)" style={{ marginTop: "2px" }} />
+                    <div className="modal-info-row align-start">
+                      <MapPin size={15} color="var(--brown)" />
                       <span>{selectedOrder.address}</span>
                     </div>
                   </div>
 
                   <div className="modal-section-title" style={{ marginTop: "8px" }}>Informasi Pembayaran</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "6px", background: "#faf6f0", padding: "12px", borderRadius: "8px", border: "1px solid #ece3d7" }}>
-                    <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  <div className="modal-info-box">
+                    <div className="modal-info-row">
                       <CreditCard size={15} color="var(--brown)" />
                       <span>{selectedOrder.payment}</span>
                     </div>
-                    <div>
-                      <span style={{ color: "var(--muted)" }}>Status Pembayaran: </span>
+                    <div className="modal-info-row">
+                      <span className="modal-info-note">Status Pembayaran:</span>
                       <b>{paymentLabel[selectedOrder.paymentStatus] ?? selectedOrder.paymentStatus}</b>
                     </div>
                     {selectedOrder.proofUrl && (
-                      <div style={{ marginTop: "4px" }}>
-                        <a href={selectedOrder.proofUrl} target="_blank" rel="noreferrer" style={{ color: "var(--brown)", fontWeight: "600", textDecoration: "underline" }}>
+                      <div className="modal-info-row">
+                        <a className="modal-link" href={selectedOrder.proofUrl} target="_blank" rel="noreferrer">
                           Lihat Bukti Pembayaran yang Diunggah
                         </a>
                       </div>
                     )}
                   </div>
 
-                  {/* Tombol Aksi di dalam Modal */}
                   {(canUpload || canCancel) && (
-                    <div style={{ display: "flex", gap: "10px", marginTop: "12px" }}>
+                    <div className="modal-actions">
                       {canUpload && (
-                        <button className="primary-button" style={{ flex: 1, height: "40px", fontSize: "13px" }} disabled={busy} onClick={() => pickProof(selectedOrder.id)}>
+                        <button
+                          className="primary-button modal-action"
+                          disabled={busy}
+                          onClick={() => pickProof(selectedOrder.id)}
+                        >
                           {selectedOrder.proofUrl ? "Ganti Bukti Pembayaran" : "Upload Bukti Pembayaran"}
                         </button>
                       )}
                       {canCancel && (
-                        <button className="detail-button" style={{ flex: 1, height: "40px", fontSize: "13px", borderColor: "#dc2626", color: "#dc2626" }} disabled={busy} onClick={() => handleCancel(selectedOrder.id)}>
+                        <button
+                          className="detail-button modal-action modal-action-cancel"
+                          disabled={busy}
+                          onClick={() => handleCancel(selectedOrder.id)}
+                        >
                           Batalkan Pesanan
                         </button>
                       )}

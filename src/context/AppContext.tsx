@@ -86,7 +86,7 @@ async function fetchAll<T>(path: string, maxPages = 20): Promise<T[]> {
     page += 1;
   } while (page <= last && page <= maxPages);
   return rows;
-}
+} //testing
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   // 1. Inisialisasi halaman berdasarkan URL path saat pertama kali dibuka/di-refresh
